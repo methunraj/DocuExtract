@@ -35,7 +35,7 @@ This mode uses a vision-capable Large Language Model (LLM) to analyze the image 
 
 ```mermaid
 graph TD
-    A[Start] --> B[Upload Image(s)]
+    A[Start] --> B[Upload Images]
     B --> C[Select LLM-based Mode]
     C --> D{Enable Smart Preprocessing?}
     D -->|Yes| E[Analyze & Preprocess Image]
@@ -57,7 +57,7 @@ This mode uses the Tesseract OCR engine to perform traditional text extraction. 
 
 ```mermaid
 graph TD
-    A[Start] --> B[Upload Image(s)]
+    A[Start] --> B[Upload Images]
     B --> C[Select Standard OCR Mode]
     C --> D{Enable Smart Preprocessing?}
     D -->|Yes| E[Analyze & Preprocess Image]
@@ -76,15 +76,15 @@ This hybrid mode first uses Tesseract to get the raw text from the image and the
 
 ```mermaid
 graph TD
-    A[Start] --> B[Upload Image(s)]
+    A[Start] --> B[Upload Images]
     B --> C[Select OCR + LLM Mode]
     C --> D{Enable Smart Preprocessing?}
     D -->|Yes| E[Analyze & Preprocess Image]
     D -->|No| F[Use Original Image]
-    E --> G[1. Process Image with Tesseract]
+    E --> G[Process Image with Tesseract]
     F --> G
     G --> H[Get Raw Text]
-    H --> I[2. Process Text with Text LLM]
+    H --> I[Process Text with Text LLM]
     I --> J{Provide Custom Schema?}
     J -->|Yes| K[Apply JSON Schema]
     J -->|No| L[Extract Unstructured Data]
