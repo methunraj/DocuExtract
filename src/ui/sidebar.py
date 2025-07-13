@@ -25,6 +25,7 @@ def create_sidebar(config_manager: ConfigManager) -> Dict[str, Any]:
         # Model Selection based on mode
         selected_llm = None
         selected_language = None
+        llm_parameters = None
         
         if mode in ["LLM-based", "OCR + LLM Extraction"]:
             st.subheader("🤖 LLM Configuration")
@@ -46,8 +47,69 @@ def create_sidebar(config_manager: ConfigManager) -> Dict[str, Any]:
                           if config_manager.get_default_llm_model() in models else 0,
                     help=f"Select {model_type.lower()} model for processing"
                 )
+                
+                # LLM Parameters
+                st.write("**Model Parameters**")
+                default_params = config_manager.get_llm_parameters()
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    temperature = st.slider(
+                        "Temperature",
+                        min_value=0.0,
+                        max_value=2.0,
+                        value=float(default_params.get('temperature', 0.1)),
+                        step=0.1,
+                        help="Controls randomness. Lower = more focused, Higher = more creative"
+                    )
+                    
+                    top_p = st.slider(
+                        "Top P",
+                        min_value=0.0,
+                        max_value=1.0,
+                        value=float(default_params.get('top_p', 0.9)),
+                        step=0.05,
+                        help="Nucleus sampling. Controls diversity of token selection"
+                    )
+                    
+                    top_k = st.number_input(
+                        "Top K",
+                        min_value=1,
+                        max_value=100,
+                        value=int(default_params.get('top_k', 40)),
+                        help="Limits token selection to top K most likely tokens"
+                    )
+                
+                with col2:
+                    num_ctx = st.number_input(
+                        "Context Window",
+                        min_value=512,
+                        max_value=256000,
+                        value=int(default_params.get('num_ctx', 4096)),
+                        step=512,
+                        help="Maximum context length in tokens"
+                    )
+                    
+                    num_predict = st.number_input(
+                        "Max Output Tokens",
+                        min_value=128,
+                        max_value=256000,
+                        value=int(default_params.get('num_predict', 2048)),
+                        step=128,
+                        help="Maximum number of tokens to generate"
+                    )
+                
+                llm_parameters = {
+                    'temperature': temperature,
+                    'top_p': top_p,
+                    'top_k': top_k,
+                    'num_ctx': num_ctx,
+                    'num_predict': num_predict
+                }
             else:
                 st.error(f"No {model_type.lower()} models configured")
+                llm_parameters = config_manager.get_llm_parameters()
         
         if mode in ["Standard OCR", "OCR + LLM Extraction"]:
             st.subheader("📝 OCR Configuration")
@@ -214,6 +276,7 @@ def create_sidebar(config_manager: ConfigManager) -> Dict[str, Any]:
         config_summary = {
             "mode": mode,
             "llm_model": selected_llm,
+            "llm_parameters": llm_parameters if mode in ["LLM-based", "OCR + LLM Extraction"] else None,
             "ocr_language": selected_language,
             "output_format": output_format,
             "preprocessing": preprocessing_mode,

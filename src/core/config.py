@@ -92,3 +92,13 @@ class ConfigManager:
     def get_preprocessing_steps(self) -> list:
         """Get list of preprocessing steps"""
         return self.get_preprocessing_config().get('steps', [])
+    
+    def get_llm_parameters(self) -> Dict[str, Any]:
+        """Get LLM parameters for fine-tuning"""
+        return self.get_llm_config().get('parameters', {
+            'temperature': 0.1,
+            'top_p': 0.9,
+            'top_k': 40,
+            'num_ctx': 4096,
+            'num_predict': 2048
+        })

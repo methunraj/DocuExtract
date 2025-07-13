@@ -1,160 +1,170 @@
-# DocuExtract
-
-[![Python Version](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![Streamlit](https://img.shields.io/badge/Streamlit-1.0+-red.svg)](https://streamlit.io)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+# OCR & Data Extraction Tool
 
 A powerful, modular Streamlit application for performing Optical Character Recognition (OCR) and structured data extraction from images using local LLMs and traditional OCR engines.
 
 ## 🚀 Features
 
+### Core Capabilities
 - **Multiple Processing Modes**:
-  - **LLM-based**: Direct image processing using vision-capable LLMs (e.g., LLaVA).
-  - **Standard OCR**: Traditional text extraction using Tesseract.
-  - **OCR + LLM Extraction**: A hybrid approach that uses Tesseract for OCR and an LLM for structured data extraction.
-- **Smart Preprocessing**:
-  - Automatic image quality analysis and skew correction.
-  - Manual override for fine-tuning brightness, contrast, denoising, and more.
-- **Flexible Input/Output**:
-  - Process single images, multiple images, or entire folders.
-  - Supports JPG, PNG, BMP, TIFF, and PDF formats.
-  - Export data to JSON, Markdown, or multi-sheet XLSX files.
-- **Highly Configurable**:
-  - Customize LLM prompts and enforce JSON schemas for structured output.
-  - Manage settings via a central `config.yaml` file without code changes.
-- **Local First**: Your data and images are processed locally and never sent to the cloud.
+  - **LLM-based**: Direct image processing using vision-capable LLMs (e.g., LLaVA)
+  - **Standard OCR**: Traditional text extraction using Tesseract
+  - **OCR + LLM Extraction**: OCR followed by LLM-based structured extraction
 
-## ⚙️ How It Works
+- **Smart Preprocessing with Auto-Detection**:
+  - Automatic image quality analysis
+  - Intelligent preprocessing recommendations
+  - Automatic skew correction
+  - Adaptive contrast and brightness adjustment
+  - Smart denoising and sharpening
+  - Manual override options
 
-The application provides three distinct workflows for processing your documents.
+- **Flexible Input Options**:
+  - Single or multiple image uploads
+  - Folder path processing
+  - Support for JPG, PNG, BMP, TIFF, and PDF formats
+  - Batch processing with progress tracking
 
-### 1. LLM-based Mode
+- **Multiple Output Formats**:
+  - JSON (all modes)
+  - Markdown (Standard OCR only)
+  - XLSX with multi-sheet support (LLM-based modes)
 
-This mode uses a vision-capable Large Language Model (LLM) to analyze the image and extract data in one step. It's best for complex layouts, handwriting, or when you need structured data directly from an image.
-
-```mermaid
-graph TD
-    A[Start] --> B[Upload Images]
-    B --> C[Select LLM-based Mode]
-    C --> D{Enable Smart Preprocessing?}
-    D -->|Yes| E[Analyze & Preprocess Image]
-    D -->|No| F[Use Original Image]
-    E --> G[Process Image with Vision LLM]
-    F --> G
-    G --> H{Provide Custom Schema?}
-    H -->|Yes| I[Apply JSON Schema]
-    H -->|No| J[Extract Unstructured Data]
-    I --> K[Generate Structured JSON/Excel]
-    J --> K
-    K --> L[Display & Download Results]
-    L --> M[End]
-```
-
-### 2. Standard OCR Mode
-
-This mode uses the Tesseract OCR engine to perform traditional text extraction. It's fast and ideal for converting high-quality scanned documents into plain text.
-
-```mermaid
-graph TD
-    A[Start] --> B[Upload Images]
-    B --> C[Select Standard OCR Mode]
-    C --> D{Enable Smart Preprocessing?}
-    D -->|Yes| E[Analyze & Preprocess Image]
-    D -->|No| F[Use Original Image]
-    E --> G[Process Image with Tesseract]
-    F --> G
-    G --> H[Extract Raw Text]
-    H --> I[Generate JSON/Markdown]
-    I --> J[Display & Download Results]
-    J --> K[End]
-```
-
-### 3. OCR + LLM Extraction Mode
-
-This hybrid mode first uses Tesseract to get the raw text from the image and then feeds that text to an LLM for structuring and analysis. It's perfect for extracting structured data (like tables or forms) from scanned documents.
-
-```mermaid
-graph TD
-    A[Start] --> B[Upload Images]
-    B --> C[Select OCR + LLM Mode]
-    C --> D{Enable Smart Preprocessing?}
-    D -->|Yes| E[Analyze & Preprocess Image]
-    D -->|No| F[Use Original Image]
-    E --> G[Process Image with Tesseract]
-    F --> G
-    G --> H[Get Raw Text]
-    H --> I[Process Text with Text LLM]
-    I --> J{Provide Custom Schema?}
-    J -->|Yes| K[Apply JSON Schema]
-    J -->|No| L[Extract Unstructured Data]
-    K --> M[Generate Structured JSON/Excel]
-    L --> M
-    M --> N[Display & Download Results]
-    N --> O[End]
-```
+- **Advanced Features**:
+  - Custom prompts for LLM guidance
+  - JSON schema enforcement for structured output
+  - Preprocessing preview and comparison
+  - Detailed processing reports
+  - Configurable via YAML without code changes
 
 ## 📁 Project Structure
 
 ```
-DocuExtract/
+Simple OCR Pipeline/
 ├── app.py                 # Main Streamlit application
 ├── config.yaml           # Configuration file
 ├── requirements.txt      # Python dependencies
 ├── README.md            # This file
+├── .gitignore          # Git ignore file
 └── src/                # Source code modules
-    ├── core/           # Core functionality (config management)
-    ├── preprocessing/  # Image preprocessing and analysis
-    ├── processors/     # OCR and LLM processing engines
-    ├── output/         # Output format handlers (JSON, Excel, etc.)
-    ├── ui/             # Streamlit UI components
+    ├── __init__.py
+    ├── core/           # Core functionality
+    │   ├── __init__.py
+    │   └── config.py   # Configuration management
+    ├── preprocessing/  # Image preprocessing
+    │   ├── __init__.py
+    │   ├── image_analyzer.py    # Image quality analysis
+    │   └── smart_preprocessor.py # Preprocessing logic
+    ├── processors/     # Processing engines
+    │   ├── __init__.py
+    │   ├── base_processor.py    # Base processor class
+    │   ├── llm_processor.py     # LLM processing
+    │   ├── ocr_processor.py     # OCR processing
+    │   └── hybrid_processor.py  # Hybrid processing
+    ├── output/         # Output handlers
+    │   ├── __init__.py
+    │   ├── base_handler.py      # Base output handler
+    │   ├── json_handler.py      # JSON output
+    │   ├── markdown_handler.py  # Markdown output
+    │   └── excel_handler.py     # Excel output
+    ├── ui/             # UI components
+    │   ├── __init__.py
+    │   ├── sidebar.py           # Sidebar configuration
+    │   ├── main_area.py         # Main input area
+    │   └── results_display.py   # Results display
     └── utils/          # Utility functions
+        ├── __init__.py
+        ├── file_handler.py      # File operations
+        ├── image_utils.py       # Image utilities
+        └── validators.py        # Input validation
 ```
 
-## 🛠️ System Requirements
+## 🛠️ Prerequisites
 
-1.  **Python 3.8+**
-2.  **Tesseract OCR**: Must be installed and in your system's PATH.
-    -   **macOS**: `brew install tesseract`
-    -   **Ubuntu/Debian**: `sudo apt-get install tesseract-ocr`
-3.  **Ollama** (for LLM inference):
-    -   Install from [ollama.ai](https://ollama.ai/install.sh).
-    -   Pull the required models: `ollama pull llava` and `ollama pull mistral`.
-4.  **Poppler** (for PDF support):
-    -   **macOS**: `brew install poppler`
-    -   **Ubuntu/Debian**: `sudo apt-get install poppler-utils`
+### System Requirements
+
+1. **Python 3.8+**
+
+2. **Tesseract OCR**:
+   ```bash
+   # macOS
+   brew install tesseract
+   
+   # Ubuntu/Debian
+   sudo apt-get install tesseract-ocr
+   
+   # Windows
+   # Download installer from: https://github.com/UB-Mannheim/tesseract/wiki
+   ```
+
+3. **Ollama** (for LLM inference):
+   ```bash
+   # Install Ollama
+   curl -fsSL https://ollama.ai/install.sh | sh
+   
+   # Pull required models
+   ollama pull llava  # For vision capabilities
+   ollama pull llama2  # For text processing
+   ollama pull mistral  # Alternative text model
+   ```
+
+4. **Poppler** (for PDF support):
+   ```bash
+   # macOS
+   brew install poppler
+   
+   # Ubuntu/Debian
+   sudo apt-get install poppler-utils
+   
+   # Windows
+   # Download from: https://blog.alivate.com.au/poppler-windows/
+   ```
+
+### Additional Language Support for OCR
+
+To use languages other than English with Tesseract:
+```bash
+# macOS
+brew install tesseract-lang
+
+# Ubuntu/Debian
+sudo apt-get install tesseract-ocr-[lang]
+# Example: sudo apt-get install tesseract-ocr-fra tesseract-ocr-deu
+```
 
 ## 📦 Installation
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/your-username/simple-ocr-pipeline.git
-    cd simple-ocr-pipeline
-    ```
+1. Clone or download this repository:
+   ```bash
+   cd "Simple OCR Pipeline"
+   ```
 
-2.  **Create and activate a virtual environment:**
-    ```bash
-    python -m venv venv
-    source venv/bin/activate  # On Windows: venv\Scripts\activate
-    ```
+2. Create a virtual environment (recommended):
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
 
-3.  **Install dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
+3. Install Python dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-4.  **Ensure Ollama is running:**
-    Open a separate terminal and run `ollama serve`.
+4. Ensure Ollama is running:
+   ```bash
+   ollama serve
+   ```
 
 ## ⚙️ Configuration
 
-The `config.yaml` file allows you to customize the application's behavior.
+Edit `config.yaml` to customize:
 
--   **Models**: Define the LLM models available in the UI.
--   **Preprocessing**: Set default preprocessing parameters and quality thresholds.
--   **Limits**: Adjust the maximum number of images for batch processing.
+- **LLM Models**: Add or remove models available in Ollama
+- **OCR Languages**: Configure supported Tesseract languages
+- **Preprocessing**: Set automatic preprocessing parameters
+- **Limits**: Adjust maximum images for batch processing
 
-**Example `config.yaml` snippet:**
+### Key Configuration Options:
+
 ```yaml
 preprocessing:
   enabled_by_default: true
@@ -162,44 +172,132 @@ preprocessing:
   quality_thresholds:
     blur_threshold: 100
     contrast_threshold: 40
+    brightness_min: 80
+    brightness_max: 200
 ```
 
 ## 🚀 Usage
 
-1.  **Start the application:**
-    ```bash
-    streamlit run app.py
-    ```
+1. Start the application:
+   ```bash
+   streamlit run app.py
+   ```
 
-2.  **Open your browser** to the local URL provided by Streamlit (usually `http://localhost:8501`).
+2. Open your browser to `http://localhost:8501`
 
-3.  **Configure your extraction** in the sidebar:
-    -   Select the **Processing Mode**.
-    -   Choose the **Models/Languages**.
-    -   Set the desired **Output Format**.
-    -   Configure **Preprocessing** (auto, manual, or disabled).
-    -   (Optional) Provide a **Custom Prompt** or **JSON Schema**.
+3. Configure your extraction:
+   - Select processing mode
+   - Choose models/languages
+   - Set output format
+   - Configure preprocessing (automatic/manual/disabled)
+   - (Optional) Customize prompts and schemas
 
-4.  **Provide input**:
-    -   Upload images/PDFs directly.
-    -   Or, enter a path to a folder containing your files.
+4. Provide input:
+   - Upload images directly, or
+   - Enter a folder path containing images
 
-5.  Click **"Run Extraction"** and download your results.
+5. Click "Run Extraction" and download results
+
+## 🔧 Processing Modes Explained
+
+### LLM-based Mode
+- Uses vision-capable LLMs to directly analyze images
+- Best for: Complex layouts, handwriting, mixed content
+- Requires: Vision model (e.g., LLaVA)
+
+### Standard OCR Mode
+- Traditional text extraction without interpretation
+- Best for: Simple text extraction, high-quality scans
+- Output: Raw text in JSON or Markdown format
+
+### OCR + LLM Extraction Mode
+- First extracts text, then uses LLM for structuring
+- Best for: When you need both raw text and structured data
+- Useful for: Forms, invoices, documents with specific schemas
+
+## 🎯 Smart Preprocessing
+
+The application now includes intelligent preprocessing with automatic detection:
+
+### Automatic Mode
+- Analyzes image quality metrics
+- Detects issues like blur, low contrast, skew
+- Applies only necessary corrections
+- Shows before/after preview
+
+### Manual Mode
+- Choose specific preprocessing steps
+- Available options:
+  - Grayscale conversion
+  - Brightness/contrast adjustment
+  - Denoising
+  - Sharpening
+  - Skew correction
+  - Adaptive thresholding
+
+### Quality Metrics
+- Blur detection (Laplacian variance)
+- Contrast measurement
+- Brightness analysis
+- Noise estimation
+- Text confidence scoring
+
+## 📋 Custom Schemas
+
+For structured extraction, provide a JSON schema:
+```json
+{
+  "invoice_number": "string",
+  "date": "string",
+  "total_amount": "number",
+  "items": [
+    {
+      "description": "string",
+      "quantity": "number",
+      "price": "number"
+    }
+  ]
+}
+```
 
 ## 🐛 Troubleshooting
 
--   **"Tesseract not found"**: Ensure Tesseract is installed and its executable is in your system's PATH.
--   **"Cannot connect to Ollama"**: Make sure the `ollama serve` command is running in a separate terminal.
--   **Poor OCR Results**: Enable smart preprocessing or manually adjust the settings for better image quality.
+### Common Issues
+
+1. **"Tesseract not found"**:
+   - Ensure Tesseract is installed and in PATH
+   - Update the path in `config.yaml` if needed
+
+2. **"Cannot connect to Ollama"**:
+   - Check if Ollama is running: `ollama list`
+   - Verify endpoint in `config.yaml`
+
+3. **"Model not found"**:
+   - Pull the model: `ollama pull [model-name]`
+   - Update `config.yaml` with available models
+
+4. **Poor OCR results**:
+   - Enable automatic preprocessing
+   - Check preprocessing preview
+   - Try different OCR languages if applicable
+
+## 🚀 Performance Tips
+
+- Use automatic preprocessing for best results
+- For batch processing, adjust `max_images` in config
+- Choose appropriate models:
+  - LLaVA: Best quality but slower
+  - Mistral/Phi3: Faster for text-only processing
+- Enable parallel processing for large batches (experimental)
 
 ## 🔒 Security Note
 
-This application runs entirely on your local machine. Your images and data are never uploaded to any cloud service, ensuring complete privacy.
+This application runs entirely locally with no cloud dependencies. Your images and data never leave your machine.
 
 ## 🤝 Contributing
 
-Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/your-username/simple-ocr-pipeline/issues).
+Feel free to submit issues, fork the repository, and create pull requests for any improvements.
 
 ## 📄 License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is provided as-is for local use. Ensure you comply with the licenses of the underlying tools (Tesseract, Ollama, etc.).

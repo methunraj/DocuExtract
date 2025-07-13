@@ -13,7 +13,7 @@ class HybridProcessor(BaseProcessor):
         self.llm_processor = LLMProcessor(config)
     
     def process(self, image: Image.Image, language: str, model: str, 
-                prompt: str, schema: Optional[str] = None, **kwargs) -> Dict[str, Any]:
+                prompt: str, schema: Optional[str] = None, llm_parameters: Optional[Dict[str, Any]] = None, **kwargs) -> Dict[str, Any]:
         """
         Process image using OCR first, then LLM for structured extraction
         
@@ -23,6 +23,7 @@ class HybridProcessor(BaseProcessor):
             model: LLM model name
             prompt: Prompt for LLM extraction
             schema: Optional JSON schema for structured output
+            llm_parameters: Optional LLM parameters for fine-tuning
             
         Returns:
             Dictionary with combined results
@@ -49,11 +50,12 @@ class HybridProcessor(BaseProcessor):
         enhanced_prompt = self._enhance_prompt(prompt, extracted_text, ocr_data)
         
         # Create a text-based request for LLM
-        llm_result = self._process_text_with_llm(
+        llm_result = self.llm_processor.process_text(
             extracted_text, 
             model, 
             enhanced_prompt, 
-            schema
+            schema,
+            llm_parameters
         )
         
         # Combine results
@@ -84,48 +86,6 @@ class HybridProcessor(BaseProcessor):
         
         return enhanced
     
-    def _process_text_with_llm(self, text: str, model: str, prompt: str, 
-                               schema: Optional[str] = None) -> Dict[str, Any]:
-        """Process text with LLM (without image)"""
-        try:
-            import ollama
-            
-            request_params = {
-                'model': model,
-                'prompt': prompt
-            }
-            
-            if schema:
-                try:
-                    import json
-                    schema_dict = json.loads(schema)
-                    request_params['format'] = 'json'
-                    request_params['prompt'] += f"\n\nPlease format your response according to this JSON schema:\n{json.dumps(schema_dict, indent=2)}"
-                except json.JSONDecodeError:
-                    return {'success': False, 'error': 'Invalid JSON schema'}
-            
-            response = ollama.generate(**request_params)
-            result_text = response.get('response', '')
-            
-            if schema:
-                try:
-                    import json
-                    result_data = json.loads(result_text)
-                    return {'success': True, 'data': result_data}
-                except json.JSONDecodeError:
-                    return {
-                        'success': True,
-                        'data': {
-                            'raw_response': result_text,
-                            'warning': 'Failed to parse response as JSON'
-                        }
-                    }
-            else:
-                return {'success': True, 'data': {'text': result_text}}
-                
-        except Exception as e:
-            return {'success': False, 'error': str(e)}
-    
     def _calculate_combined_confidence(self, ocr_data: Dict, llm_result: Dict) -> float:
         """Calculate combined confidence score"""
         ocr_confidence = ocr_data.get('confidence', 0) / 100.0
@@ -141,12 +101,12 @@ class HybridProcessor(BaseProcessor):
     
     def process_with_fallback(self, image: Image.Image, language: str, 
                             vision_model: str, text_model: str, prompt: str,
-                            schema: Optional[str] = None) -> Dict[str, Any]:
+                            schema: Optional[str] = None, llm_parameters: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
         Try vision model first, fall back to OCR+LLM if it fails
         """
         # Try direct vision processing first
-        vision_result = self.llm_processor.process(image, vision_model, prompt, schema)
+        vision_result = self.llm_processor.process(image, vision_model, prompt, schema, llm_parameters)
         
         if vision_result['success']:
             return self.prepare_response({
@@ -155,7 +115,7 @@ class HybridProcessor(BaseProcessor):
             })
         
         # Fall back to hybrid approach
-        hybrid_result = self.process(image, language, text_model, prompt, schema)
+        hybrid_result = self.process(image, language, text_model, prompt, schema, llm_parameters)
         
         if hybrid_result['success']:
             result_data = hybrid_result['data']

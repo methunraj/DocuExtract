@@ -9,12 +9,18 @@ llm:
       type: "text"  # Vision model - needs to be installed
       description: "Multimodal LLM for direct image processing"
   default_model: "gemma3:4b"
+  parameters:
+    temperature: 0.1
+    top_p: 0.9
+    top_k: 40
+    num_ctx: 128000
+    num_predict: 128000
 
 ocr:
   engine: "tesseract"  # Only supported for now; could extend to others
   languages: ["eng", "fra", "deu", "spa", "ita", "por", "chi_sim", "jpn", "kor"]  # Tesseract language codes
   default_language: "eng"
-  path: "/usr/local/bin/tesseract"  # Optional path to Tesseract binary
+  path: "/opt/homebrew/bin/tesseract"  # Optional path to Tesseract binary
 
 preprocessing:
   enabled_by_default: true  # Changed to true for automatic preprocessing
