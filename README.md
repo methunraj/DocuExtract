@@ -35,16 +35,16 @@ This mode uses a vision-capable Large Language Model (LLM) to analyze the image 
 
 ```mermaid
 graph TD
-    A[Start] --> B{Upload Image(s)}
+    A[Start] --> B[Upload Image(s)]
     B --> C[Select LLM-based Mode]
     C --> D{Enable Smart Preprocessing?}
-    D -- Yes --> E[Analyze & Preprocess Image]
-    D -- No --> F[Use Original Image]
+    D -->|Yes| E[Analyze & Preprocess Image]
+    D -->|No| F[Use Original Image]
     E --> G[Process Image with Vision LLM]
     F --> G
     G --> H{Provide Custom Schema?}
-    H -- Yes --> I[Apply JSON Schema]
-    H -- No --> J[Extract Unstructured Data]
+    H -->|Yes| I[Apply JSON Schema]
+    H -->|No| J[Extract Unstructured Data]
     I --> K[Generate Structured JSON/Excel]
     J --> K
     K --> L[Display & Download Results]
@@ -57,11 +57,11 @@ This mode uses the Tesseract OCR engine to perform traditional text extraction. 
 
 ```mermaid
 graph TD
-    A[Start] --> B{Upload Image(s)}
+    A[Start] --> B[Upload Image(s)]
     B --> C[Select Standard OCR Mode]
     C --> D{Enable Smart Preprocessing?}
-    D -- Yes --> E[Analyze & Preprocess Image]
-    D -- No --> F[Use Original Image]
+    D -->|Yes| E[Analyze & Preprocess Image]
+    D -->|No| F[Use Original Image]
     E --> G[Process Image with Tesseract]
     F --> G
     G --> H[Extract Raw Text]
@@ -76,18 +76,18 @@ This hybrid mode first uses Tesseract to get the raw text from the image and the
 
 ```mermaid
 graph TD
-    A[Start] --> B{Upload Image(s)}
+    A[Start] --> B[Upload Image(s)]
     B --> C[Select OCR + LLM Mode]
     C --> D{Enable Smart Preprocessing?}
-    D -- Yes --> E[Analyze & Preprocess Image]
-    D -- No --> F[Use Original Image]
+    D -->|Yes| E[Analyze & Preprocess Image]
+    D -->|No| F[Use Original Image]
     E --> G[1. Process Image with Tesseract]
     F --> G
     G --> H[Get Raw Text]
     H --> I[2. Process Text with Text LLM]
     I --> J{Provide Custom Schema?}
-    J -- Yes --> K[Apply JSON Schema]
-    J -- No --> L[Extract Unstructured Data]
+    J -->|Yes| K[Apply JSON Schema]
+    J -->|No| L[Extract Unstructured Data]
     K --> M[Generate Structured JSON/Excel]
     L --> M
     M --> N[Display & Download Results]
