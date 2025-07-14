@@ -53,7 +53,7 @@ class FileHandler:
     @staticmethod
     def process_pdf(pdf_path: str, output_dir: Optional[str] = None) -> List[Tuple[str, int]]:
         """
-        Convert PDF to images using pdf2image
+        Convert PDF to images using PyMuPDF (fitz) - Windows compatible
         
         Args:
             pdf_path (str): Path to PDF file
@@ -63,7 +63,7 @@ class FileHandler:
             list: List of tuples (image_path, page_number)
             
         Raises:
-            RuntimeError: If Poppler is not installed on the system
+            RuntimeError: If PyMuPDF is not available
             IOError: If PDF file cannot be read
         """
         if not os.path.exists(pdf_path):
@@ -74,40 +74,53 @@ class FileHandler:
         else:
             os.makedirs(output_dir, exist_ok=True)
         
+        # Try PyMuPDF first (Windows compatible)
         try:
-            images = convert_from_path(pdf_path, dpi=200)
+            import fitz  # PyMuPDF
+            pdf_document = fitz.open(pdf_path)
             base_name = Path(pdf_path).stem
             image_paths = []
             
-            for i, image in enumerate(images, 1):
-                image_path = os.path.join(output_dir, f"{base_name}_page_{i}.png")
-                image.save(image_path, 'PNG')
-                image_paths.append((image_path, i))
+            for page_num in range(pdf_document.page_count):
+                page = pdf_document.load_page(page_num)
+                pix = page.get_pixmap(matrix=fitz.Matrix(2.0, 2.0))  # DPI equivalent of ~200
+                image_path = os.path.join(output_dir, f"{base_name}_page_{page_num + 1}.png")
+                pix.save(image_path)
+                image_paths.append((image_path, page_num + 1))
+                pix = None  # Free memory
             
+            pdf_document.close()
             return image_paths
             
-        except ImportError as e:
-            if "poppler" in str(e).lower():
-                raise RuntimeError(
-                    "PDF processing requires Poppler utilities.\n\n"
-                    "Installation instructions:\n"
-                    "- macOS (using Homebrew): brew install poppler\n"
-                    "- macOS (using MacPorts): sudo port install poppler\n"
-                    "- Ubuntu/Debian: sudo apt-get install poppler-utils\n"
-                    "- Windows: Download from https://github.com/oschwartz10612/poppler-windows/releases/\n\n"
-                    "After installation, restart the application."
-                )
-            else:
-                raise e
+        except ImportError:
+            # Fallback to pdf2image if PyMuPDF not installed
+            try:
+                images = convert_from_path(pdf_path, dpi=200)
+                base_name = Path(pdf_path).stem
+                image_paths = []
+                
+                for i, image in enumerate(images, 1):
+                    image_path = os.path.join(output_dir, f"{base_name}_page_{i}.png")
+                    image.save(image_path, 'PNG')
+                    image_paths.append((image_path, i))
+                
+                return image_paths
+                
+            except Exception as fallback_e:
+                if "poppler" in str(fallback_e).lower() or "Unable to get page count" in str(fallback_e):
+                    raise RuntimeError(
+                        "PDF processing requires either PyMuPDF or Poppler utilities.\n\n"
+                        "For Windows compatibility, install PyMuPDF:\n"
+                        "- pip install PyMuPDF\n\n"
+                        "Alternative (requires Poppler):\n"
+                        "- Windows: Download from https://github.com/oschwartz10612/poppler-windows/releases/\n\n"
+                        "After installation, restart the application."
+                    )
+                else:
+                    raise fallback_e
                 
         except Exception as e:
-            if "Unable to get page count" in str(e):
-                raise RuntimeError(
-                    f"Failed to process PDF {pdf_path}. Error: {str(e)}\n\n"
-                    f"Check if the PDF file is valid and not corrupted.\n"
-                    f"Ensure Poppler utilities are installed and accessible in PATH."
-                )
-            raise Exception(f"Error converting PDF {pdf_path}: {str(e)}")
+            raise Exception(f"Error processing PDF {pdf_path}: {str(e)}")
     
     @staticmethod
     def load_image(file_path: str) -> Image.Image:

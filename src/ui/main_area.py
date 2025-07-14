@@ -30,7 +30,7 @@ def create_main_area(config_manager: ConfigManager) -> Tuple[List[str], str]:
                 "Choose images",
                 type=config_manager.get_supported_formats(),
                 accept_multiple_files=True,
-                help="Select one or more image files"
+                help="Select one or more image files (max 2GB per file)"
             )
             
             if uploaded_files:
