@@ -18,7 +18,7 @@ class OCRProcessor(BaseProcessor):
     
     def process(self, image: Image.Image, language: str = 'eng', **kwargs) -> Dict[str, Any]:
         """
-        Extract text from image using OCR
+        Extract text from image using OCR with enhanced error handling
         
         Args:
             image: PIL Image to process
@@ -27,18 +27,54 @@ class OCRProcessor(BaseProcessor):
         Returns:
             Dictionary with extracted text and metadata
         """
-        self.validate_input(image)
-        
         try:
-            # Basic text extraction
-            text = pytesseract.image_to_string(image, lang=language)
+            self.validate_input(image)
             
-            # Get detailed data including confidence scores
-            data = pytesseract.image_to_data(image, lang=language, output_type=pytesseract.Output.DICT)
+            # Validate tesseract installation
+            try:
+                import pytesseract
+                pytesseract.get_tesseract_version()
+            except pytesseract.TesseractNotFoundError:
+                return self.prepare_response(None, 
+                    "Tesseract executable not found. Please install tesseract-ocr:\n"
+                    "Linux: sudo apt-get install tesseract-ocr\n"
+                    "macOS: brew install tesseract\n"
+                    "Windows: Download from https://github.com/UB-Mannheim/tesseract/wiki")
+            
+            # Validate language support
+            available_langs = pytesseract.get_languages()
+            if language not in available_langs:
+                return self.prepare_response(None, 
+                    f"Unsupported OCR language '{language}'. "
+                    f"Available: {list(available_langs)}")
+            
+            # Convert image for better OCR if needed
+            if image.mode == 'RGBA':
+                image = image.convert('RGB')
+            elif image.mode == 'P':
+                image = image.convert('RGB')
+            
+            # Basic text extraction
+            try:
+                text = pytesseract.image_to_string(image, lang=language)
+                
+                # Get detailed data including confidence scores
+                data = pytesseract.image_to_data(image, lang=language, output_type=pytesseract.Output.DICT)
+            except pytesseract.TesseractError as e:
+                error_msg = str(e)
+                if "permission denied" in error_msg.lower():
+                    return self.prepare_response(None, 
+                        "Tesseract permission denied. Check tesseract installation permissions")
+                return self.prepare_response(None, f"Tesseract processing error: {error_msg}")
             
             # Calculate average confidence
             confidences = [int(conf) for conf in data['conf'] if int(conf) > 0]
             avg_confidence = np.mean(confidences) if confidences else 0
+            
+            # Handle no text detected case
+            cleaned_text = text.strip()
+            if not cleaned_text and not any(data['text']):
+                return self.prepare_response(None, "No text detected in image")
             
             # Get bounding boxes for text regions
             boxes = self._extract_text_boxes(data)
@@ -47,18 +83,25 @@ class OCRProcessor(BaseProcessor):
             osd = self._get_orientation_info(image)
             
             result = {
-                'text': text.strip(),
+                'text': cleaned_text,
                 'confidence': float(avg_confidence),
                 'word_count': len([w for w in data['text'] if w.strip()]),
                 'language': language,
                 'text_boxes': boxes,
-                'orientation': osd
+                'orientation': osd,
+                'text_length': len(cleaned_text),
+                'box_count': len(boxes)
             }
             
             return self.prepare_response(result)
             
+        except MemoryError:
+            return self.prepare_response(None, 
+                "Out of memory while processing image. Try downsizing the image")
+        except ValueError as e:
+            return self.prepare_response(None, f"Invalid input: {str(e)}")
         except Exception as e:
-            return self.prepare_response(None, f"OCR processing failed: {str(e)}")
+            return self.prepare_response(None, f"OCR processing failed: {type(e).__name__}: {str(e)}")
     
     def _extract_text_boxes(self, data: Dict) -> List[Dict]:
         """Extract bounding boxes for text regions"""

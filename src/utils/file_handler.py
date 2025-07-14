@@ -52,7 +52,20 @@ class FileHandler:
     
     @staticmethod
     def process_pdf(pdf_path: str, output_dir: Optional[str] = None) -> List[Tuple[str, int]]:
-        """Convert PDF pages to images"""
+        """
+        Convert PDF to images using pdf2image
+        
+        Args:
+            pdf_path (str): Path to PDF file
+            output_dir (str): Directory to save converted images
+            
+        Returns:
+            list: List of tuples (image_path, page_number)
+            
+        Raises:
+            RuntimeError: If Poppler is not installed on the system
+            IOError: If PDF file cannot be read
+        """
         if not os.path.exists(pdf_path):
             raise ValueError(f"PDF file does not exist: {pdf_path}")
         
@@ -61,19 +74,40 @@ class FileHandler:
         else:
             os.makedirs(output_dir, exist_ok=True)
         
-        # Convert PDF to images
-        images = convert_from_path(pdf_path)
-        
-        image_paths = []
-        base_name = Path(pdf_path).stem
-        
-        for i, image in enumerate(images):
-            page_num = i + 1
-            image_path = os.path.join(output_dir, f"{base_name}_page_{page_num}.png")
-            image.save(image_path, 'PNG')
-            image_paths.append((image_path, page_num))
-        
-        return image_paths
+        try:
+            images = convert_from_path(pdf_path, dpi=200)
+            base_name = Path(pdf_path).stem
+            image_paths = []
+            
+            for i, image in enumerate(images, 1):
+                image_path = os.path.join(output_dir, f"{base_name}_page_{i}.png")
+                image.save(image_path, 'PNG')
+                image_paths.append((image_path, i))
+            
+            return image_paths
+            
+        except ImportError as e:
+            if "poppler" in str(e).lower():
+                raise RuntimeError(
+                    "PDF processing requires Poppler utilities.\n\n"
+                    "Installation instructions:\n"
+                    "- macOS (using Homebrew): brew install poppler\n"
+                    "- macOS (using MacPorts): sudo port install poppler\n"
+                    "- Ubuntu/Debian: sudo apt-get install poppler-utils\n"
+                    "- Windows: Download from https://github.com/oschwartz10612/poppler-windows/releases/\n\n"
+                    "After installation, restart the application."
+                )
+            else:
+                raise e
+                
+        except Exception as e:
+            if "Unable to get page count" in str(e):
+                raise RuntimeError(
+                    f"Failed to process PDF {pdf_path}. Error: {str(e)}\n\n"
+                    f"Check if the PDF file is valid and not corrupted.\n"
+                    f"Ensure Poppler utilities are installed and accessible in PATH."
+                )
+            raise Exception(f"Error converting PDF {pdf_path}: {str(e)}")
     
     @staticmethod
     def load_image(file_path: str) -> Image.Image:

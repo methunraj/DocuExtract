@@ -55,13 +55,13 @@ class LLMProcessor(BaseProcessor):
         Returns:
             Dictionary with processing results
         """
-        self.validate_input(image)
-        
-        # Validate model (vision capability required for image processing)
-        if not self._validate_model(model, require_vision=True):
-            return self.prepare_response(None, f"Model '{model}' not found or not vision-capable")
-        
         try:
+            self.validate_input(image)
+            
+            # Validate model (vision capability required for image processing)
+            if not self._validate_model(model, require_vision=True):
+                return self.prepare_response(None, f"Model '{model}' not found or not vision-capable")
+            
             # Convert image to base64
             image_base64 = self._image_to_base64(image)
             
@@ -92,16 +92,42 @@ class LLMProcessor(BaseProcessor):
                 except json.JSONDecodeError:
                     return self.prepare_response(None, "Invalid JSON schema provided")
             
-            # Call Ollama
-            response = ollama.generate(**request_params)
+            try:
+                # Call Ollama
+                response = ollama.generate(**request_params)
+            except ollama.ResponseError as e:
+                if "does not support images" in str(e).lower():
+                    return self.prepare_response(None, f"Model '{model}' does not support vision capabilities")
+                elif "not found" in str(e).lower():
+                    return self.prepare_response(None, f"Model '{model}' not found")
+                else:
+                    return self.prepare_response(None, f"Ollama response error: {str(e)}")
+            except requests.exceptions.ConnectionError:
+                return self.prepare_response(None, f"Cannot connect to Ollama at {self.endpoint}")
+            except requests.exceptions.Timeout:
+                return self.prepare_response(None, "Ollama request timed out")
+            except requests.exceptions.RequestException as e:
+                return self.prepare_response(None, f"Request failed: {str(e)}")
+            
+            # Validate response structure
+            if not response or 'response' not in response:
+                return self.prepare_response(None, "Invalid or empty response from LLM")
             
             # Process response
-            result_text = response.get('response', '')
+            result_text = response.get('response', '').strip()
+            if not result_text:
+                return self.prepare_response(None, "Empty response from LLM")
             
             if schema:
                 # Try to parse as JSON
+                import re
                 try:
-                    result_data = json.loads(result_text)
+                    # Attempt to extract JSON from response if wrapped in backticks
+                    json_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', result_text, re.DOTALL)
+                    if json_match:
+                        result_data = json.loads(json_match.group(1))
+                    else:
+                        result_data = json.loads(result_text)
                     return self.prepare_response(result_data)
                 except json.JSONDecodeError:
                     # Return raw text if JSON parsing fails
@@ -113,7 +139,7 @@ class LLMProcessor(BaseProcessor):
                 return self.prepare_response({'text': result_text})
             
         except Exception as e:
-            return self.prepare_response(None, f"LLM processing failed: {str(e)}")
+            return self.prepare_response(None, f"LLM processing failed: {type(e).__name__}: {str(e)}")
     
     def _validate_model(self, model: str, require_vision: bool = True) -> bool:
         """Validate if model exists and has required capabilities"""

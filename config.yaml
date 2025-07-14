@@ -43,6 +43,7 @@ preprocessing:
 
 general:
   max_images: 50  # Limit for folder processing to avoid overload
+  max_batch_size: 100
   temp_dir: "./temp"  # For storing processed files
   supported_formats:
     - jpg
@@ -53,4 +54,9 @@ general:
     - tif
     - pdf
   parallel_processing: false  # Enable/disable parallel processing
+  max_workers: 4
+  memory_warning_threshold: 512  # MB
+  stop_on_error: false
+  batch_processing: true
+  enable_memory_monitoring: true
   batch_size: 10  # Default batch size for large sets
