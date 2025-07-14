@@ -93,8 +93,30 @@ class LLMProcessor(BaseProcessor):
                     return self.prepare_response(None, "Invalid JSON schema provided")
             
             try:
-                # Call Ollama
-                response = ollama.generate(**request_params)
+                # Call Ollama using chat endpoint (recommended over deprecated generate)
+                messages = [
+                    {
+                        'role': 'user',
+                        'content': request_params['prompt'],
+                        'images': request_params.get('images', [])
+                    }
+                ]
+                
+                chat_params = {
+                    'model': request_params['model'],
+                    'messages': messages,
+                    'stream': False
+                }
+                
+                # Add options if provided
+                if 'options' in request_params:
+                    chat_params['options'] = request_params['options']
+                
+                # Add format if provided
+                if 'format' in request_params:
+                    chat_params['format'] = request_params['format']
+                
+                response = ollama.chat(**chat_params)
             except ollama.ResponseError as e:
                 if "does not support images" in str(e).lower():
                     return self.prepare_response(None, f"Model '{model}' does not support vision capabilities")
@@ -109,12 +131,13 @@ class LLMProcessor(BaseProcessor):
             except requests.exceptions.RequestException as e:
                 return self.prepare_response(None, f"Request failed: {str(e)}")
             
-            # Validate response structure
-            if not response or 'response' not in response:
+            # Validate response structure (chat endpoint returns 'message' not 'response')
+            if not response or 'message' not in response:
                 return self.prepare_response(None, "Invalid or empty response from LLM")
             
-            # Process response
-            result_text = response.get('response', '').strip()
+            # Process response from chat endpoint
+            message = response.get('message', {})
+            result_text = message.get('content', '').strip()
             if not result_text:
                 return self.prepare_response(None, "Empty response from LLM")
             
@@ -210,11 +233,33 @@ class LLMProcessor(BaseProcessor):
                 except json.JSONDecodeError:
                     return self.prepare_response(None, "Invalid JSON schema provided")
             
-            # Call Ollama
-            response = ollama.generate(**request_params)
+            # Call Ollama using chat endpoint (recommended over deprecated generate)
+            messages = [
+                {
+                    'role': 'user',
+                    'content': request_params['prompt']
+                }
+            ]
             
-            # Process response
-            result_text = response.get('response', '')
+            chat_params = {
+                'model': request_params['model'],
+                'messages': messages,
+                'stream': False
+            }
+            
+            # Add options if provided
+            if 'options' in request_params:
+                chat_params['options'] = request_params['options']
+            
+            # Add format if provided
+            if 'format' in request_params:
+                chat_params['format'] = request_params['format']
+            
+            response = ollama.chat(**chat_params)
+            
+            # Process response from chat endpoint
+            message = response.get('message', {})
+            result_text = message.get('content', '')
             
             if schema:
                 # Try to parse as JSON

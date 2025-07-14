@@ -68,7 +68,7 @@ def display_results(results: List[Dict[str, Any]], config: Dict[str, Any]):
     
     with col1:
         # Primary format download
-        if st.button(f"Download as {output_format}", type="primary", use_container_width=True):
+        if st.button(f"Download as {output_format}", type="primary"):
             file_path, file_data = _generate_output_file(results, output_format, timestamp)
             
             st.download_button(
@@ -81,7 +81,7 @@ def display_results(results: List[Dict[str, Any]], config: Dict[str, Any]):
     with col2:
         # Alternative format download
         alt_format = "JSON" if output_format != "JSON" else "Markdown"
-        if st.button(f"Download as {alt_format}", use_container_width=True):
+        if st.button(f"Download as {alt_format}"):
             file_path, file_data = _generate_output_file(results, alt_format, timestamp)
             
             st.download_button(
@@ -94,7 +94,7 @@ def display_results(results: List[Dict[str, Any]], config: Dict[str, Any]):
     with col3:
         # Download preprocessing report if available
         if any('processing_info' in r for r in results):
-            if st.button("Download Processing Report", use_container_width=True):
+            if st.button("Download Processing Report"):
                 report = _generate_processing_report(results)
                 
                 st.download_button(
@@ -142,7 +142,7 @@ def _display_summary(results: List[Dict[str, Any]], config: Dict[str, Any]):
             summary_data.append(row)
         
         df = pd.DataFrame(summary_data)
-        st.dataframe(df, use_container_width=True, hide_index=True)
+        st.dataframe(df, hide_index=True)
     
     if failed_results:
         st.subheader("❌ Failed Extractions")
@@ -212,7 +212,7 @@ def _display_llm_result(result: Dict[str, Any]):
         if len(data) > 0 and all(isinstance(v, (str, int, float, bool)) for v in data.values()):
             st.subheader("📊 Table View")
             df = pd.DataFrame([data])
-            st.dataframe(df, use_container_width=True)
+            st.dataframe(df)
     else:
         st.text(str(data))
 

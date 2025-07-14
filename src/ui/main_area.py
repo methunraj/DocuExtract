@@ -114,7 +114,7 @@ def create_main_area(config_manager: ConfigManager) -> Tuple[List[str], str]:
                     from src.utils.image_utils import ImageUtils
                     thumbnail = ImageUtils.create_thumbnail(img, size=(150, 150))
                     
-                    st.image(thumbnail, caption=os.path.basename(file_path), use_container_width=True)
+                    st.image(thumbnail, caption=os.path.basename(file_path))
                     
                     # Show image info
                     st.caption(f"{img.width}×{img.height}")

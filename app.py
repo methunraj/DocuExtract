@@ -71,11 +71,14 @@ def process_single_image(image_path: str, image: Image.Image, config: dict,
         
         # Show preprocessing preview if requested
         if st.session_state.get('show_preprocessing_preview', False):
-            col1, col2 = st.columns(2)
-            with col1:
-                st.image(image, caption="Original", use_container_width=True)
-            with col2:
-                st.image(processed_image, caption="Processed", use_container_width=True)
+            try:
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.image(image, caption="Original")
+                with col2:
+                    st.image(processed_image, caption="Processed")
+            except Exception as e:
+                st.info("Preview not available for this image type")
         
         # Process based on mode
         if config['mode'] == "LLM-based":
@@ -148,7 +151,6 @@ def main():
                 "🚀 Run Extraction",
                 type="primary",
                 disabled=st.session_state.processing,
-                use_container_width=True
             )
         
         if process_button:
